@@ -1,0 +1,52 @@
+# Local documentation, datasets, and environment notes
+/docs/
+/data/
+/notes/
+
+# Generated embeddings, indexes, and search outputs
+/artifacts/
+
+# Python virtual environments and bytecode
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Tool caches and test reports
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+
+# Python build outputs
+build/
+dist/
+*.egg-info/
+
+# Local secrets (keep shareable configuration templates)
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# Downloaded model weights and checkpoints
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Editor, OS, and runtime files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.log
