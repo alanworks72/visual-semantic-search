@@ -1,13 +1,12 @@
+import warnings
+warnings.filterwarnings('ignore')
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
-from PIL import Image, ImageOps
-from transformers import AutoModel, AutoProcessor
 
-import warnings
-
-warnings.filterwarnings('ignore')
+from encoder import load_encoder, encode_images, encode_texts
+from img_io import load_images
+from search import search_vectors
 
 model_id = 'openai/clip-vit-base-patch32'
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -17,27 +16,21 @@ paths = sorted(p for p in Path('data/sample').iterdir() if p.suffix.lower() in (
 if not paths:
     raise SystemExit('data/sample에 이미지를 넣어주세요.')
 
-images = []
-for path in paths:
-    with Image.open(path) as img:
-        images.append(ImageOps.exif_transpose(img).convert('RGB'))
+images = load_images(paths)
+proc, model = load_encoder(model_id, device)
 
-proc = AutoProcessor.from_pretrained(model_id)
-model = AutoModel.from_pretrained(model_id).to(device).eval()
+img_vecs = encode_images(model, proc, images, device)
 
-query = input('영문 검색어: ').strip()
+while(True):
+    query = input('영문 검색어: ').strip()
 
-if not query:
-    raise SystemExit('검색어를 입력해주세요.')
+    if not query:
+        raise SystemExit('검색어를 입력해주세요.')
+    if query == 'quit':
+        break
 
-inputs = proc(images=images, text=[query], padding=True, truncation=True, return_tensors='pt').to(device)
+    txt_vec = encode_texts(model, proc, query, device)
 
-with torch.inference_mode():
-    outputs = model(**inputs)
-    img_vecs = F.normalize(outputs.image_embeds.float(), dim=-1)
-    txt_vec = F.normalize(outputs.text_embeds.float(), dim=-1)
-    scores = (txt_vec @ img_vecs.T)[0]
-
-vals, inds = scores.topk(min(5, len(paths)))
-for rank, (score, index) in enumerate(zip(vals.tolist(), inds.tolist()), 1):
-    print(rank, paths[index], round(score, 4))
+    vals, inds = search_vectors(txt_vec, img_vecs)
+    for rank, (score, index) in enumerate(zip(vals.tolist(), inds.tolist()), 1):
+        print(rank, paths[index], round(score, 4))
